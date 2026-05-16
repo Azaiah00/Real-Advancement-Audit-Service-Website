@@ -1,0 +1,22 @@
+# Netlify build configuration for the Real Advancement Next.js site.
+# The official @netlify/plugin-nextjs runtime is installed automatically by
+# Netlify when it detects Next.js, so we only declare build settings here.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--no-audit --no-fund"
+
+[[headers]]
+  for = "/*.mp4"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    Accept-Ranges = "bytes"
+
+[[headers]]
+  for = "/logo-ra.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
