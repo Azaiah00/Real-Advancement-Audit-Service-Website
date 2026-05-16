@@ -49,12 +49,22 @@ export const StagingRevealCard = memo(function StagingRevealCard() {
         onTouchMove={(e) => onMove(e.touches[0].clientX)}
         className="relative aspect-[16/10] w-full select-none overflow-hidden rounded-2xl border border-ink-900/8 bg-bone-100"
       >
-        <EmptyRoom />
+        <img
+          src="/staging-before.jpg"
+          alt="Empty room — before staging"
+          className="absolute inset-0 h-full w-full object-cover"
+          draggable={false}
+        />
         <div
           className="absolute inset-0 overflow-hidden"
           style={{ clipPath: `inset(0 ${(1 - pos) * 100}% 0 0)` }}
         >
-          <StagedRoom />
+          <img
+            src="/staging-after.png"
+            alt="Same room — virtually staged"
+            className="absolute inset-0 h-full w-full object-cover"
+            draggable={false}
+          />
         </div>
 
         <motion.div
@@ -91,68 +101,6 @@ export const StagingRevealCard = memo(function StagingRevealCard() {
     </div>
   );
 });
-
-function EmptyRoom() {
-  return (
-    <svg viewBox="0 0 800 500" className="h-full w-full">
-      <defs>
-        <linearGradient id="floor" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#e8e3d4" />
-          <stop offset="100%" stopColor="#cdc6b1" />
-        </linearGradient>
-        <linearGradient id="wall" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#f4f1e8" />
-          <stop offset="100%" stopColor="#e9e5d6" />
-        </linearGradient>
-      </defs>
-      <rect width="800" height="320" fill="url(#wall)" />
-      <polygon points="0,320 800,320 720,500 80,500" fill="url(#floor)" />
-      <rect x="120" y="80" width="180" height="200" fill="#e9e5d6" stroke="#cfcab8" strokeWidth="2" />
-      <rect x="135" y="95" width="150" height="170" fill="#dfd9c5" />
-      <line x1="210" y1="95" x2="210" y2="265" stroke="#bdb6a2" strokeWidth="1" />
-      <line x1="135" y1="180" x2="285" y2="180" stroke="#bdb6a2" strokeWidth="1" />
-      <rect x="540" y="200" width="140" height="120" fill="#e0d9c2" stroke="#c0b9a3" strokeWidth="1.5" />
-      <line x1="0" y1="320" x2="800" y2="320" stroke="#b6ad95" strokeWidth="1" />
-    </svg>
-  );
-}
-
-function StagedRoom() {
-  return (
-    <svg viewBox="0 0 800 500" className="h-full w-full">
-      <defs>
-        <linearGradient id="floor2" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#d6cdb2" />
-          <stop offset="100%" stopColor="#a8a085" />
-        </linearGradient>
-        <linearGradient id="wall2" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#f1ece0" />
-          <stop offset="100%" stopColor="#e4dfce" />
-        </linearGradient>
-        <linearGradient id="window" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#fff8d6" />
-          <stop offset="100%" stopColor="#f1d6a0" />
-        </linearGradient>
-      </defs>
-      <rect width="800" height="320" fill="url(#wall2)" />
-      <polygon points="0,320 800,320 720,500 80,500" fill="url(#floor2)" />
-      <rect x="120" y="80" width="180" height="200" fill="url(#window)" stroke="#9c8c6b" strokeWidth="2" />
-      <line x1="210" y1="80" x2="210" y2="280" stroke="#9c8c6b" strokeWidth="1.5" />
-      <line x1="120" y1="180" x2="300" y2="180" stroke="#9c8c6b" strokeWidth="1.5" />
-      <rect x="80" y="380" width="280" height="90" rx="8" fill="#3a3a37" />
-      <rect x="92" y="345" width="36" height="40" rx="6" fill="#5a564d" />
-      <rect x="312" y="345" width="36" height="40" rx="6" fill="#5a564d" />
-      <rect x="120" y="360" width="180" height="22" rx="5" fill="#e8dfc7" />
-      <rect x="430" y="300" width="40" height="160" rx="4" fill="#4a463d" />
-      <ellipse cx="450" cy="300" rx="50" ry="14" fill="#cdc6b1" />
-      <rect x="540" y="200" width="140" height="120" fill="url(#window)" stroke="#9c8c6b" strokeWidth="1.5" />
-      <rect x="520" y="320" width="180" height="22" rx="3" fill="#7a6f55" />
-      <rect x="560" y="280" width="100" height="40" rx="3" fill="#a89875" />
-      <circle cx="610" cy="300" r="8" fill="#e0d4a8" />
-      <line x1="0" y1="320" x2="800" y2="320" stroke="#86795c" strokeWidth="1.5" />
-    </svg>
-  );
-}
 
 function Stat({
   label,
