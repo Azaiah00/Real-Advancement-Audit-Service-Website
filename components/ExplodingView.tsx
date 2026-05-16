@@ -63,62 +63,53 @@ export function ExplodingView() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [duration, setDuration] = useState(0);
   const [ready, setReady] = useState(false);
-  const seekingRef = useRef(false);
-  const pendingTimeRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end end"],
   });
 
-  // Spring-smoothed scroll progress so micro-jitter on the trackpad doesn't translate
-  // into stuttering seeks. Stiffness/damping tuned so the visual lag is imperceptible
-  // (~80ms) while still absorbing noise.
+  // Spring-smoothed scroll progress so trackpad micro-jitter doesn't translate
+  // into stutter. Lag is ~80ms — imperceptible against an 8-second video.
   const smoothed = useSpring(scrollYProgress, {
     stiffness: 220,
     damping: 38,
     mass: 0.35,
   });
 
-  // Ensure the video is paused (autoPlay is off, but be explicit).
+  // Force the browser to actually download the video. Some browsers treat
+  // preload="auto" as a hint and lazily defer fetch for paused, off-screen
+  // videos — load() guarantees a fetch.
   useEffect(() => {
     const v = videoRef.current;
-    if (v) v.pause();
+    if (!v) return;
+    v.pause();
+    v.load();
   }, []);
 
-  // Seek dispatcher — guards against stomping an in-flight seek by gating on the
-  // `seeking` flag and the `seeked` event. Without this, fast scrolls drop frames
-  // because the decoder can't keep up with currentTime writes.
-  const applySeek = () => {
-    const video = videoRef.current;
-    const target = pendingTimeRef.current;
-    if (!video || target === null || !duration || seekingRef.current) return;
-    if (Math.abs(video.currentTime - target) < 1 / 60) return;
-    seekingRef.current = true;
-    pendingTimeRef.current = null;
-    try {
-      video.currentTime = target;
-    } catch {
-      seekingRef.current = false;
-    }
-  };
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    const onSeeked = () => {
-      seekingRef.current = false;
-      if (pendingTimeRef.current !== null) applySeek();
-    };
-    video.addEventListener("seeked", onSeeked);
-    return () => video.removeEventListener("seeked", onSeeked);
-  }, [duration]);
-
+  // Coalesce scroll-driven seeks into one currentTime write per animation frame.
+  // The all-intra encoding lets the browser seek to any frame cheaply; the rAF
+  // gate just keeps us from writing redundantly within a single paint.
   useMotionValueEvent(smoothed, "change", (v) => {
     if (!duration) return;
-    pendingTimeRef.current = Math.max(0, Math.min(v, 0.999)) * duration;
-    applySeek();
+    const target = Math.max(0, Math.min(v, 0.999)) * duration;
+    if (rafRef.current !== null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      const video = videoRef.current;
+      if (video && !Number.isNaN(video.duration)) {
+        video.currentTime = target;
+      }
+    });
   });
+
+  useEffect(
+    () => () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    },
+    [],
+  );
 
   return (
     <section
@@ -135,22 +126,18 @@ export function ExplodingView() {
             playsInline
             preload="auto"
             disablePictureInPicture
-            // Frame-accurate scrubbing requires the entire video buffered AND every
-            // frame seekable. The source is re-encoded all-intra (one keyframe per
-            // frame); `canplaythrough` confirms the buffer is full before we let the
-            // scroll handler touch currentTime.
             onLoadedMetadata={(e) => {
               setDuration(e.currentTarget.duration);
               e.currentTarget.currentTime = 0;
             }}
-            onCanPlayThrough={() => setReady(true)}
+            onLoadedData={() => setReady(true)}
             className={`h-full w-full object-cover transition-opacity duration-700 ease-editorial ${ready ? "opacity-100" : "opacity-0"}`}
           />
           {/* Inward radial mask — keeps the exploded interior centered, bleeds the edges back into bone. */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_75%_64%_at_50%_50%,transparent_0%,transparent_38%,rgba(250,250,247,0.55)_64%,rgba(250,250,247,0.94)_90%,rgb(250,250,247)_100%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_92%_82%_at_50%_50%,transparent_0%,transparent_56%,rgba(250,250,247,0.45)_76%,rgba(250,250,247,0.9)_94%,rgb(250,250,247)_100%)]" />
           {/* Top + bottom bleed so the section dissolves into the page rhythm. */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-bone-50 via-bone-50/75 to-transparent" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-bone-50 via-bone-50/75 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-bone-50 via-bone-50/60 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-bone-50 via-bone-50/60 to-transparent" />
         </div>
 
         <div className="relative z-10 mx-auto flex h-full w-full max-w-page items-end px-6 pb-24 lg:px-10 lg:pb-32">
